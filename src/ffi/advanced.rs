@@ -924,6 +924,41 @@ unsafe extern "C" {
     ) -> *mut c_void;
     #[link_name = "nw_shim_listener_unsubscribe"]
     pub fn nw_shim_listener_unsubscribe(handle: *mut c_void, token: u64);
+    #[link_name = "nw_shim_listener_prepare_with_port"]
+    pub fn nw_shim_listener_prepare_with_port(
+        parameters: *mut c_void,
+        port: u16,
+        out_status: *mut c_int,
+    ) -> *mut c_void;
+    #[link_name = "nw_shim_listener_prepare_direct"]
+    pub fn nw_shim_listener_prepare_direct(
+        parameters: *mut c_void,
+        out_status: *mut c_int,
+    ) -> *mut c_void;
+    #[link_name = "nw_shim_listener_prepare_with_connection"]
+    pub fn nw_shim_listener_prepare_with_connection(
+        connection_handle: *mut c_void,
+        parameters: *mut c_void,
+        out_status: *mut c_int,
+    ) -> *mut c_void;
+    #[link_name = "nw_shim_listener_prepare_with_launchd_key"]
+    pub fn nw_shim_listener_prepare_with_launchd_key(
+        parameters: *mut c_void,
+        launchd_key: *const c_char,
+        out_status: *mut c_int,
+    ) -> *mut c_void;
+    #[link_name = "nw_shim_listener_set_new_connection_group_handler"]
+    pub fn nw_shim_listener_set_new_connection_group_handler(
+        handle: *mut c_void,
+        callback: Option<ListenerNewConnectionGroupCallback>,
+        context: *mut c_void,
+        retain: Option<NwShimContextCallback>,
+        release: Option<NwShimContextCallback>,
+    ) -> c_int;
+    #[link_name = "nw_shim_listener_set_advertise_descriptor"]
+    pub fn nw_shim_listener_set_advertise_descriptor(handle: *mut c_void, descriptor: *mut c_void);
+    #[link_name = "nw_shim_listener_start_prepared"]
+    pub fn nw_shim_listener_start_prepared(handle: *mut c_void) -> c_int;
 
     #[link_name = "nw_shim_path_enumerate_gateways"]
     pub fn nw_shim_path_enumerate_gateways(
