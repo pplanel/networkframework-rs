@@ -5308,6 +5308,13 @@ void nw_shim_connection_restart(void *handle) {
     }
 }
 
+void nw_shim_connection_cancel(void *handle) {
+    nw_conn_handle *h = (nw_conn_handle *)handle;
+    if (h) {
+        nw_shim_conn_cancel(h);
+    }
+}
+
 void nw_shim_connection_force_cancel(void *handle) {
     nw_conn_handle *h = (nw_conn_handle *)handle;
     if (h) {

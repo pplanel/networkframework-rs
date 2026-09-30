@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TcpClient::connect_endpoint(&endpoint, &parameters)` connects to any
   `Endpoint`, including a Bonjour service.
 
+- `TcpClient::cancel()` cancels a connection gracefully (TCP FIN) through a
+  shared reference, and wakes any `receive` blocked on another thread. Before
+  this, the only graceful close was dropping the client, and `force_cancel`
+  resets the connection, which can discard data the peer has not read yet.
+
 ### Changed
 
 - Bonjour advertisers run on the listener lifecycle instead of a copy of it.

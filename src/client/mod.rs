@@ -251,7 +251,21 @@ impl TcpClient {
         }
     }
 
-    /// Force immediate cancellation without graceful teardown.
+    /// Cancel the connection gracefully: TCP closes with a FIN, and any
+    /// `receive` blocked on another thread returns an error. Unlike dropping
+    /// the client, this works through a shared reference, e.g. to tear down
+    /// both sides of a relay from either direction. Idempotent; dropping the
+    /// client afterwards does not cancel it again.
+    pub fn cancel(&self) {
+        // SAFETY: `self.handle` is the live connection handle owned by this
+        // client, and the shim forwards the request without retaining pointers.
+        unsafe {
+            ffi::nw_shim_connection_cancel(self.handle);
+        }
+    }
+
+    /// Force immediate cancellation without graceful teardown (TCP resets
+    /// the connection; see [`TcpClient::cancel`] for a graceful close).
     pub fn force_cancel(&self) {
         // SAFETY: `self.handle` is the live connection handle owned by this
         // client, and the shim forwards the request without retaining pointers.

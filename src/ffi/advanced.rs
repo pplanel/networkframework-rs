@@ -718,6 +718,8 @@ unsafe extern "C" {
     pub fn nw_shim_connection_unsubscribe(handle: *mut c_void, token: u64);
     #[link_name = "nw_shim_connection_restart"]
     pub fn nw_shim_connection_restart(handle: *mut c_void);
+    #[link_name = "nw_shim_connection_cancel"]
+    pub fn nw_shim_connection_cancel(handle: *mut c_void);
     #[link_name = "nw_shim_connection_force_cancel"]
     pub fn nw_shim_connection_force_cancel(handle: *mut c_void);
     #[link_name = "nw_shim_connection_cancel_current_endpoint"]

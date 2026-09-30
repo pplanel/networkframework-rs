@@ -739,6 +739,7 @@ uint64_t nw_shim_connection_subscribe_path(
 );
 void nw_shim_connection_unsubscribe(void *handle, uint64_t token);
 void nw_shim_connection_restart(void *handle);
+void nw_shim_connection_cancel(void *handle);
 void nw_shim_connection_force_cancel(void *handle);
 void nw_shim_connection_cancel_current_endpoint(void *handle);
 void nw_shim_connection_batch(void *handle, ConnectionBatchCallback callback, void *user_info);
