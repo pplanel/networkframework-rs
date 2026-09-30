@@ -2000,6 +2000,21 @@ void nw_shim_parameters_set_prefer_no_proxy(void *parameters, int prefer_no_prox
     nw_parameters_set_prefer_no_proxy((nw_parameters_t)parameters, prefer_no_proxy != 0);
 }
 
+void *nw_shim_connection_create_with_endpoint(void *endpoint, void *parameters, int *out_status) {
+    if (!endpoint || !parameters) {
+        if (out_status) *out_status = NW_INVALID_ARG;
+        return NULL;
+    }
+
+    nw_connection_t conn = nw_connection_create((nw_endpoint_t)endpoint, (nw_parameters_t)parameters);
+    if (!conn) {
+        if (out_status) *out_status = NW_CONNECT_FAILED;
+        return NULL;
+    }
+
+    return nw_shim_conn_start_and_wait(conn, "networkframework-rs.conn.params", NW_SHIM_CONNECT_TIMEOUT_NS, out_status);
+}
+
 void *nw_shim_connection_create_with_parameters(
     const char *host,
     uint16_t port,
@@ -2017,14 +2032,9 @@ void *nw_shim_connection_create_with_parameters(
         return NULL;
     }
 
-    nw_connection_t conn = nw_connection_create(endpoint, (nw_parameters_t)parameters);
+    void *handle = nw_shim_connection_create_with_endpoint(endpoint, parameters, out_status);
     nw_release(endpoint);
-    if (!conn) {
-        if (out_status) *out_status = NW_CONNECT_FAILED;
-        return NULL;
-    }
-
-    return nw_shim_conn_start_and_wait(conn, "networkframework-rs.conn.params", NW_SHIM_CONNECT_TIMEOUT_NS, out_status);
+    return handle;
 }
 
 void *nw_shim_test_copy_failed_connection_error(const char *host, uint16_t port, int use_tls) {

@@ -959,6 +959,12 @@ unsafe extern "C" {
     pub fn nw_shim_listener_set_advertise_descriptor(handle: *mut c_void, descriptor: *mut c_void);
     #[link_name = "nw_shim_listener_start_prepared"]
     pub fn nw_shim_listener_start_prepared(handle: *mut c_void) -> c_int;
+    #[link_name = "nw_shim_connection_create_with_endpoint"]
+    pub fn nw_shim_connection_create_with_endpoint(
+        endpoint: *mut c_void,
+        parameters: *mut c_void,
+        out_status: *mut c_int,
+    ) -> *mut c_void;
 
     #[link_name = "nw_shim_path_enumerate_gateways"]
     pub fn nw_shim_path_enumerate_gateways(

@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `on_advertised_endpoint` sees the first registration event, and
   `TcpListener::set_advertise_descriptor` replaces or removes the
   advertisement on a running listener.
+- `TcpClient::connect_endpoint(&endpoint, &parameters)` connects to any
+  `Endpoint`, including a Bonjour service.
 
 ### Changed
 

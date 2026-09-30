@@ -5,7 +5,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use networkframework::{
-    AdvertiseDescriptor, ConnectionParameters, Endpoint, NetworkError, TcpListener,
+    AdvertiseDescriptor, ConnectionParameters, Endpoint, NetworkError, TcpClient, TcpListener,
 };
 
 fn loopback_tcp() -> Result<ConnectionParameters, NetworkError> {
@@ -64,6 +64,34 @@ fn builder_rejects_a_launchd_key_with_a_nul_byte() -> Result<(), NetworkError> {
 }
 
 #[test]
+fn connect_endpoint_reaches_a_loopback_listener() -> Result<(), NetworkError> {
+    let listener = TcpListener::builder(&loopback_tcp()?).bind()?;
+    let endpoint = Endpoint::address("127.0.0.1", listener.local_port())?;
+
+    let client = TcpClient::connect_endpoint(&endpoint, &ConnectionParameters::tcp()?)?;
+    let server = listener.accept()?;
+    client.send(b"hello")?;
+    assert_eq!(server.receive(5)?, b"hello");
+    server.send(b"world")?;
+    assert_eq!(client.receive(5)?, b"world");
+    Ok(())
+}
+
+#[test]
+fn connect_endpoint_fails_when_nothing_listens() -> Result<(), NetworkError> {
+    // std closes its socket synchronously on drop (a Network.framework
+    // listener cancels asynchronously), so the port is closed afterwards.
+    let port = std::net::TcpListener::bind(("127.0.0.1", 0))
+        .and_then(|listener| listener.local_addr())
+        .expect("probe port")
+        .port();
+    let endpoint = Endpoint::address("127.0.0.1", port)?;
+    let result = TcpClient::connect_endpoint(&endpoint, &ConnectionParameters::tcp()?);
+    assert!(result.is_err());
+    Ok(())
+}
+
+#[test]
 fn advertise_descriptor_can_be_cleared_on_a_running_listener() -> Result<(), NetworkError> {
     let mut listener = TcpListener::builder(&loopback_tcp()?).bind()?;
     // Clearing an advertisement that was never set is a no-op and sends nothing.
@@ -74,15 +102,17 @@ fn advertise_descriptor_can_be_cleared_on_a_running_listener() -> Result<(), Net
 
 #[test]
 #[ignore = "publishes a Bonjour service over mDNS on the LAN and AWDL"]
-fn advertised_peer_to_peer_listener_reports_its_service_name() -> Result<(), NetworkError> {
+fn advertised_peer_to_peer_listener_accepts_connections_by_service_name() -> Result<(), NetworkError>
+{
+    let service_type = "_nfwtest._tcp";
     let service_name = unique_service_name();
+
     let mut parameters = ConnectionParameters::tcp()?;
     parameters.set_include_peer_to_peer(true);
-    let descriptor =
-        AdvertiseDescriptor::bonjour_service(Some(&service_name), "_nfwtest._tcp", None)?;
+    let descriptor = AdvertiseDescriptor::bonjour_service(Some(&service_name), service_type, None)?;
 
     let (advertised_tx, advertised_rx) = mpsc::channel();
-    let _listener = TcpListener::builder(&parameters)
+    let listener = TcpListener::builder(&parameters)
         .advertise(descriptor)
         .on_advertised_endpoint(move |endpoint, added| {
             let _ = advertised_tx.send((endpoint.and_then(|e| e.bonjour_service_name()), added));
@@ -94,5 +124,11 @@ fn advertised_peer_to_peer_listener_reports_its_service_name() -> Result<(), Net
         .expect("advertised endpoint callback");
     assert!(added);
     assert_eq!(name.as_deref(), Some(service_name.as_str()));
+
+    let endpoint = Endpoint::bonjour_service(Some(&service_name), service_type, Some("local."))?;
+    let client = TcpClient::connect_endpoint(&endpoint, &parameters)?;
+    let server = listener.accept()?;
+    client.send(b"awdl")?;
+    assert_eq!(server.receive(4)?, b"awdl");
     Ok(())
 }

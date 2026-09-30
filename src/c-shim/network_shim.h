@@ -218,6 +218,7 @@ int nw_shim_parameters_get_prohibit_constrained(void *parameters);
 void nw_shim_parameters_set_allow_ultra_constrained(void *parameters, int allow_ultra_constrained);
 int nw_shim_parameters_get_allow_ultra_constrained(void *parameters);
 
+void *nw_shim_connection_create_with_endpoint(void *endpoint, void *parameters, int *out_status);
 void *nw_shim_connection_create_with_parameters(
     const char *host,
     uint16_t port,

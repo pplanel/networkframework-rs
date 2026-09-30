@@ -197,9 +197,11 @@ the framework locks or serializes, still share one object across clones.
   `set_include_peer_to_peer(true)` the service is also advertised over AWDL.
   `on_advertised_endpoint` reports the registered name from the first event,
   and `set_advertise_descriptor` replaces or removes the advertisement later.
+- `TcpClient::connect_endpoint(&endpoint, &parameters)` connects to any
+  `Endpoint`, including a Bonjour service that Network.framework resolves.
 
 ```rust,no_run
-use networkframework::{AdvertiseDescriptor, ConnectionParameters, TcpListener};
+use networkframework::{AdvertiseDescriptor, ConnectionParameters, Endpoint, TcpClient, TcpListener};
 
 fn main() -> Result<(), networkframework::NetworkError> {
     let mut parameters = ConnectionParameters::tcp()?;
@@ -212,7 +214,11 @@ fn main() -> Result<(), networkframework::NetworkError> {
             println!("advertised={added} {:?}", endpoint.and_then(|e| e.bonjour_service_name()));
         })
         .bind()?;
-    let _client = listener.accept()?;
+
+    // On the peer:
+    let endpoint = Endpoint::bonjour_service(Some("Imperium"), "_awdlssh._tcp", Some("local."))?;
+    let _client = TcpClient::connect_endpoint(&endpoint, &parameters)?;
+    let _server = listener.accept()?;
     Ok(())
 }
 ```
