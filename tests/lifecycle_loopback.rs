@@ -14,7 +14,9 @@ use networkframework::{
     TcpListener, TlsIdentity, TlsVersion, UdpClient,
 };
 
-fn loopback_only(mut parameters: ConnectionParameters) -> Result<ConnectionParameters, NetworkError> {
+fn loopback_only(
+    mut parameters: ConnectionParameters,
+) -> Result<ConnectionParameters, NetworkError> {
     parameters.set_local_endpoint(Some(&Endpoint::address("127.0.0.1", 0)?));
     Ok(parameters)
 }
@@ -829,7 +831,10 @@ fn quic_multiplex_group_starts_rejects_late_handlers_and_cancels() -> Result<(),
             group.set_new_connection_handler(|_connection| {}),
             Err(NetworkError::InvalidArgument(_))
         ));
-        assert!(matches!(group.start(), Err(NetworkError::InvalidArgument(_))));
+        assert!(matches!(
+            group.start(),
+            Err(NetworkError::InvalidArgument(_))
+        ));
         let deadline = Instant::now() + Duration::from_secs(10);
         let mut ready = false;
         while !ready {
@@ -850,7 +855,10 @@ fn quic_multiplex_group_starts_rejects_late_handlers_and_cancels() -> Result<(),
                 Err(_) => break false,
             }
         };
-        assert!(cancelled, "round {round}: cancel must deliver the final cancelled state");
+        assert!(
+            cancelled,
+            "round {round}: cancel must deliver the final cancelled state"
+        );
         drop(group);
     }
     drop(listener);
