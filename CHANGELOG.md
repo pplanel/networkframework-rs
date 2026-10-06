@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   this, the only graceful close was dropping the client, and `force_cancel`
   resets the connection, which can discard data the peer has not read yet.
 
+- `TcpListener::cancel()` cancels a listener through a shared reference: it
+  stops listening and advertising, and wakes any `accept` blocked on another
+  thread. Before this, dropping the listener was the only way to stop it, which
+  a thread blocked in `accept` on it can't do.
+
 ### Changed
 
 - Bonjour advertisers run on the listener lifecycle instead of a copy of it.

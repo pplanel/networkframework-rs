@@ -5693,6 +5693,13 @@ void nw_shim_listener_set_new_connection_limit(void *handle, uint32_t new_connec
     }
 }
 
+void nw_shim_listener_cancel_shared(void *handle) {
+    nw_listener_handle *h = (nw_listener_handle *)handle;
+    if (h) {
+        nw_shim_listener_cancel(h);
+    }
+}
+
 static void nw_shim_listener_on_advertised(nw_listener_handle *h, nw_endpoint_t endpoint, bool added) {
     nw_shim_snapshot snapshot;
     nw_shim_subscriptions_snapshot(&h->subs, NW_SHIM_EVENT_ADVERTISED_ENDPOINT, &snapshot);

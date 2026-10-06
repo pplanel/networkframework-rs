@@ -848,6 +848,7 @@ void nw_shim_listener_set_advertise_descriptor(void *handle, void *descriptor);
 int nw_shim_listener_start_prepared(void *handle);
 uint32_t nw_shim_listener_get_new_connection_limit(void *handle);
 void nw_shim_listener_set_new_connection_limit(void *handle, uint32_t new_connection_limit);
+void nw_shim_listener_cancel_shared(void *handle);
 uint64_t nw_shim_listener_subscribe_state(
     void *handle,
     ListenerStateCallback callback,

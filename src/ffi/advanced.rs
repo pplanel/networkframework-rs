@@ -890,6 +890,8 @@ unsafe extern "C" {
         handle: *mut c_void,
         new_connection_limit: u32,
     );
+    #[link_name = "nw_shim_listener_cancel_shared"]
+    pub fn nw_shim_listener_cancel_shared(handle: *mut c_void);
     #[link_name = "nw_shim_listener_subscribe_state"]
     pub fn nw_shim_listener_subscribe_state(
         handle: *mut c_void,

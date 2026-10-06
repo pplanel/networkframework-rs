@@ -239,7 +239,7 @@ Scope (updated in 0.14.0): only Network.framework's own headers are counted. The
 | `nw_ip_options_set_version` | function | `ip_options.h` | ProtocolOptions, ProtocolMetadata, IpVersion, IpEcnFlag, IpLocalAddressPreference, ServiceClass |
 | `nw_ip_version_t` | enum | `ip_options.h` | ProtocolOptions, ProtocolMetadata, IpVersion, IpEcnFlag, IpLocalAddressPreference, ServiceClass |
 | `nw_link_quality_t` | enum | `path.h` | Path |
-| `nw_listener_cancel` | function | `listener.h` | AdvertiseDescriptor, Advertiser, advertise_with_descriptor, Browser, BrowseDescriptor, start_browser_with_descriptor |
+| `nw_listener_cancel` | function | `listener.h` | AdvertiseDescriptor, Advertiser, advertise_with_descriptor, Browser, BrowseDescriptor, start_browser_with_descriptor, TcpListener |
 | `nw_listener_create` | function | `listener.h` | TcpListener, TcpClient, ConnectionParameters, ConnectionGroup, Endpoint |
 | `nw_listener_create_with_connection` | function | `listener.h` | TcpListener, TcpClient, ConnectionParameters, ConnectionGroup, Endpoint |
 | `nw_listener_create_with_launchd_key` | function | `listener.h` | TcpListener, TcpClient, ConnectionParameters, ConnectionGroup, Endpoint |

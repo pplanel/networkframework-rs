@@ -170,6 +170,18 @@ impl TcpListener {
         self
     }
 
+    /// Cancel the listener through a shared reference: it stops listening and
+    /// advertising, and an `accept` blocked on another thread returns
+    /// [`NetworkError::Cancelled`] once no ready connection is left.
+    /// Idempotent; dropping the listener afterwards does not cancel it again.
+    pub fn cancel(&self) {
+        // SAFETY: `self.handle` is the live listener handle owned by this
+        // listener, and the shim forwards the request without retaining pointers.
+        unsafe {
+            ffi::nw_shim_listener_cancel_shared(self.handle);
+        }
+    }
+
     /// Replace the listener's advertisement, or stop advertising with `None`.
     /// Setting a new descriptor on a running listener can update its TXT
     /// record.
