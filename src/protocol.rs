@@ -557,6 +557,18 @@ impl ProtocolMetadata {
         let handle = unsafe { ffi::nw_shim_tls_copy_sec_protocol_metadata(self.handle) };
         (!handle.is_null()).then_some(unsafe { SecurityProtocolMetadata::from_raw(handle) })
     }
+
+    #[must_use]
+    pub fn quic_security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        let handle = unsafe { ffi::nw_shim_quic_copy_sec_protocol_metadata(self.handle) };
+        (!handle.is_null()).then_some(unsafe { SecurityProtocolMetadata::from_raw(handle) })
+    }
+
+    #[must_use]
+    pub fn security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        self.tls_security_metadata()
+            .or_else(|| self.quic_security_metadata())
+    }
 }
 
 impl Clone for ProtocolMetadata {

@@ -745,6 +745,7 @@ void nw_shim_connection_cancel_current_endpoint(void *handle);
 void nw_shim_connection_batch(void *handle, ConnectionBatchCallback callback, void *user_info);
 char *nw_shim_connection_copy_description(void *handle);
 void *nw_shim_connection_copy_protocol_metadata(void *handle, void *definition);
+void *nw_shim_connection_copy_sec_protocol_metadata(void *handle);
 uint32_t nw_shim_connection_get_maximum_datagram_size(void *handle);
 void nw_shim_connection_release_without_cancel(void *handle);
 
@@ -1000,6 +1001,7 @@ void nw_shim_sec_options_set_verify_callback(
 );
 uint16_t nw_shim_sec_metadata_get_negotiated_tls_version(void *metadata);
 char *nw_shim_sec_metadata_copy_negotiated_protocol(void *metadata);
+uint8_t *nw_shim_sec_metadata_copy_peer_leaf_certificate(void *metadata, size_t *out_length);
 void nw_shim_sha256(const uint8_t *data, size_t length, uint8_t *out_digest);
 
 #ifdef __cplusplus

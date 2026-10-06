@@ -20,6 +20,7 @@ use crate::ffi;
 use crate::parameters::ConnectionParameters;
 use crate::path::Path;
 use crate::protocol::{ProtocolDefinition, ProtocolMetadata};
+use crate::quic_support::SecurityProtocolMetadata;
 
 /// Blocking client wrapper around `nw_connection`.
 ///
@@ -344,6 +345,23 @@ impl TcpClient {
             // the caller to wrap and own.
             Some(unsafe { ProtocolMetadata::from_raw(handle) })
         }
+    }
+
+    /// Copy the security protocol metadata associated with this connection,
+    /// checking TLS first and then QUIC.
+    #[must_use]
+    pub fn security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        // SAFETY: `self.handle` is either null or a live connection handle.
+        let handle = unsafe { ffi::nw_shim_connection_copy_sec_protocol_metadata(self.handle) };
+        (!handle.is_null()).then_some(unsafe { SecurityProtocolMetadata::from_raw(handle) })
+    }
+
+    /// DER-encoded leaf certificate presented by the peer, if TLS or QUIC
+    /// security metadata is available and carries a peer certificate chain.
+    #[must_use]
+    pub fn peer_certificate(&self) -> Option<Vec<u8>> {
+        self.security_metadata()
+            .and_then(|metadata| metadata.peer_leaf_certificate())
     }
 
     fn unsubscribe<T: Send + Sync + 'static>(&self, subscription: Option<Subscription<T>>) {

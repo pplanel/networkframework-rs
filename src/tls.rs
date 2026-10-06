@@ -12,7 +12,7 @@ use crate::error::NetworkError;
 use crate::ffi;
 use crate::parameters::ConnectionParameters;
 use crate::protocol::ProtocolOptions;
-use crate::quic_support::{SecurityProtocolMetadata, SecurityProtocolOptions};
+pub use crate::quic_support::{SecurityProtocolMetadata, SecurityProtocolOptions};
 
 pub struct TlsIdentity {
     handle: *mut c_void,
@@ -274,6 +274,24 @@ impl SecurityProtocolOptions {
 }
 
 impl SecurityProtocolMetadata {
+    /// Copy the peer leaf certificate in DER format, if available.
+    #[must_use]
+    pub fn peer_leaf_certificate(&self) -> Option<Vec<u8>> {
+        let mut len = 0_usize;
+        let ptr = unsafe {
+            ffi::nw_shim_sec_metadata_copy_peer_leaf_certificate(self.as_ptr(), &raw mut len)
+        };
+        if ptr.is_null() || len == 0 {
+            if !ptr.is_null() {
+                unsafe { ffi::nw_shim_free_buffer(ptr.cast()) };
+            }
+            return None;
+        }
+        let cert = unsafe { std::slice::from_raw_parts(ptr, len) }.to_vec();
+        unsafe { ffi::nw_shim_free_buffer(ptr.cast()) };
+        Some(cert)
+    }
+
     #[must_use]
     pub fn negotiated_tls_version(&self) -> Option<TlsVersion> {
         TlsVersion::from_raw(unsafe {

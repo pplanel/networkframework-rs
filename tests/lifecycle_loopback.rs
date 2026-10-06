@@ -622,6 +622,23 @@ fn tls_listener_completes_pinned_handshakes_and_survives_failed_ones() -> Result
         security.negotiated_application_protocol().as_deref(),
         Some("doomfish-echo")
     );
+    let leaf_cert = security
+        .peer_leaf_certificate()
+        .expect("peer leaf certificate from security metadata");
+    assert_eq!(certificate_sha256(&leaf_cert), pin);
+
+    let client_sec = client
+        .security_metadata()
+        .expect("security metadata from client");
+    assert_eq!(
+        client_sec.peer_leaf_certificate().as_deref(),
+        Some(leaf_cert.as_slice())
+    );
+
+    let client_peer_cert = client
+        .peer_certificate()
+        .expect("peer certificate directly from client");
+    assert_eq!(client_peer_cert, leaf_cert);
 
     assert!(
         TcpClient::connect_tls("127.0.0.1", port).is_err(),
@@ -638,6 +655,72 @@ fn tls_listener_completes_pinned_handshakes_and_survives_failed_ones() -> Result
     rx.recv_timeout(Duration::from_secs(10))
         .expect("server finished");
     server.join().expect("server thread")?;
+    Ok(())
+}
+
+#[test]
+fn plain_tcp_has_no_security_metadata_or_peer_certificate() -> Result<(), NetworkError> {
+    let listener = TcpListener::bind_loopback(0)?;
+    let port = listener.local_port();
+    let client = TcpClient::connect("127.0.0.1", port)?;
+    assert!(client.security_metadata().is_none());
+    assert!(client.peer_certificate().is_none());
+    let accepted = listener.accept()?;
+    assert!(accepted.security_metadata().is_none());
+    assert!(accepted.peer_certificate().is_none());
+    Ok(())
+}
+
+#[test]
+fn mtls_handshake_exposes_peer_certificates_on_both_sides() -> Result<(), NetworkError> {
+    let Some(TestIdentity {
+        identity: server_identity,
+        pin: server_pin,
+    }) = test_identity("mtls-server")
+    else {
+        return Ok(());
+    };
+    let Some(TestIdentity {
+        identity: client_identity,
+        pin: client_pin,
+    }) = test_identity("mtls-client")
+    else {
+        return Ok(());
+    };
+
+    let server_parameters = ConnectionParameters::tls_tcp_configured(|tls| {
+        tls.set_local_identity(&server_identity)
+            .set_peer_authentication_required(true)
+            .pin_peer_certificate_sha256(&[client_pin]);
+    })?;
+    let listener = TcpListener::bind_with_parameters(0, &loopback_only(server_parameters)?)?;
+    let port = listener.local_port();
+
+    let server_thread = thread::spawn(move || -> Result<Option<Vec<u8>>, NetworkError> {
+        let connection = listener.accept()?;
+        let cert = connection.peer_certificate();
+        let data = connection.receive(16)?;
+        connection.send(&data)?;
+        Ok(cert)
+    });
+
+    let client_parameters = ConnectionParameters::tls_tcp_configured(|tls| {
+        tls.set_local_identity(&client_identity)
+            .pin_peer_certificate_sha256(&[server_pin]);
+    })?;
+    let client = TcpClient::connect_with_parameters("127.0.0.1", port, &client_parameters)?;
+    client.send(b"ping")?;
+    assert_eq!(client.receive(16)?, b"ping");
+
+    let server_leaf = client.peer_certificate().expect("server leaf on client");
+    assert_eq!(certificate_sha256(&server_leaf), server_pin);
+
+    let client_leaf = server_thread
+        .join()
+        .expect("server thread")?
+        .expect("client leaf on server");
+    assert_eq!(certificate_sha256(&client_leaf), client_pin);
+
     Ok(())
 }
 
