@@ -473,6 +473,19 @@ impl QuicConnection {
         let handle = unsafe { ffi::nw_shim_connection_copy_quic_metadata(self.as_ptr()) };
         (!handle.is_null()).then_some(unsafe { QuicMetadata::from_raw(handle) })
     }
+
+    /// Copy the security protocol metadata associated with this QUIC connection.
+    #[must_use]
+    pub fn security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        self.metadata().and_then(|m| m.security_metadata())
+    }
+
+    /// DER-encoded leaf certificate presented by the peer.
+    #[must_use]
+    pub fn peer_certificate(&self) -> Option<Vec<u8>> {
+        self.security_metadata()
+            .and_then(|m| m.peer_leaf_certificate())
+    }
 }
 
 impl ContentContext {

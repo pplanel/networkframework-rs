@@ -5425,6 +5425,38 @@ void *nw_shim_connection_copy_protocol_metadata(void *handle, void *definition) 
     return nw_connection_copy_protocol_metadata(h->conn, (nw_protocol_definition_t)definition);
 }
 
+void *nw_shim_connection_copy_sec_protocol_metadata(void *handle) {
+    nw_conn_handle *h = (nw_conn_handle *)handle;
+    if (!h || !h->conn) {
+        return NULL;
+    }
+    nw_protocol_definition_t tls_definition = nw_protocol_copy_tls_definition();
+    if (tls_definition) {
+        nw_protocol_metadata_t metadata = nw_connection_copy_protocol_metadata(h->conn, tls_definition);
+        nw_release(tls_definition);
+        if (metadata) {
+            sec_protocol_metadata_t sec_metadata = nw_tls_copy_sec_protocol_metadata(metadata);
+            nw_release(metadata);
+            if (sec_metadata) {
+                return sec_metadata;
+            }
+        }
+    }
+    nw_protocol_definition_t quic_definition = nw_protocol_copy_quic_definition();
+    if (quic_definition) {
+        nw_protocol_metadata_t metadata = nw_connection_copy_protocol_metadata(h->conn, quic_definition);
+        nw_release(quic_definition);
+        if (metadata) {
+            sec_protocol_metadata_t sec_metadata = nw_quic_copy_sec_protocol_metadata(metadata);
+            nw_release(metadata);
+            if (sec_metadata) {
+                return sec_metadata;
+            }
+        }
+    }
+    return NULL;
+}
+
 uint32_t nw_shim_connection_get_maximum_datagram_size(void *handle) {
     nw_conn_handle *h = (nw_conn_handle *)handle;
     if (!h) {
@@ -6172,6 +6204,59 @@ char *nw_shim_sec_metadata_copy_negotiated_protocol(void *metadata) {
     const char *value = sec_protocol_metadata_get_negotiated_protocol((sec_protocol_metadata_t)metadata);
 #pragma clang diagnostic pop
     return value ? strdup(value) : NULL;
+}
+
+uint8_t *nw_shim_sec_metadata_copy_peer_leaf_certificate(void *metadata, size_t *out_length) {
+    if (out_length) {
+        *out_length = 0;
+    }
+    if (!metadata) {
+        return NULL;
+    }
+    __block uint8_t *leaf_bytes = NULL;
+    __block size_t leaf_len = 0;
+    __block bool has_leaf = false;
+    bool ok = sec_protocol_metadata_access_peer_certificate_chain(
+        (sec_protocol_metadata_t)metadata,
+        ^(sec_certificate_t certificate) {
+            if (has_leaf) {
+                return;
+            }
+            has_leaf = true;
+            if (!certificate) {
+                return;
+            }
+            SecCertificateRef cert_ref = sec_certificate_copy_ref(certificate);
+            if (!cert_ref) {
+                return;
+            }
+            CFDataRef data = SecCertificateCopyData(cert_ref);
+            if (data) {
+                CFIndex length = CFDataGetLength(data);
+                const UInt8 *ptr = CFDataGetBytePtr(data);
+                if (ptr && length > 0) {
+                    leaf_bytes = (uint8_t *)malloc((size_t)length);
+                    if (leaf_bytes) {
+                        memcpy(leaf_bytes, ptr, (size_t)length);
+                        leaf_len = (size_t)length;
+                    }
+                }
+                CFRelease(data);
+            }
+            CFRelease(cert_ref);
+        }
+    );
+    if (!ok || !leaf_bytes) {
+        if (leaf_bytes) {
+            free(leaf_bytes);
+            leaf_bytes = NULL;
+        }
+        return NULL;
+    }
+    if (out_length) {
+        *out_length = leaf_len;
+    }
+    return leaf_bytes;
 }
 
 void nw_shim_sha256(const uint8_t *data, size_t length, uint8_t *out_digest) {

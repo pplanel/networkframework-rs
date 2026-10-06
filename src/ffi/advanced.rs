@@ -163,6 +163,11 @@ unsafe extern "C" {
     pub fn nw_shim_sec_metadata_get_negotiated_tls_version(metadata: *mut c_void) -> u16;
     #[link_name = "nw_shim_sec_metadata_copy_negotiated_protocol"]
     pub fn nw_shim_sec_metadata_copy_negotiated_protocol(metadata: *mut c_void) -> *mut c_char;
+    #[link_name = "nw_shim_sec_metadata_copy_peer_leaf_certificate"]
+    pub fn nw_shim_sec_metadata_copy_peer_leaf_certificate(
+        metadata: *mut c_void,
+        out_length: *mut usize,
+    ) -> *mut u8;
     #[link_name = "nw_shim_sha256"]
     pub fn nw_shim_sha256(data: *const u8, length: usize, out_digest: *mut u8);
 
@@ -737,6 +742,8 @@ unsafe extern "C" {
         handle: *mut c_void,
         definition: *mut c_void,
     ) -> *mut c_void;
+    #[link_name = "nw_shim_connection_copy_sec_protocol_metadata"]
+    pub fn nw_shim_connection_copy_sec_protocol_metadata(handle: *mut c_void) -> *mut c_void;
     #[link_name = "nw_shim_connection_get_maximum_datagram_size"]
     pub fn nw_shim_connection_get_maximum_datagram_size(handle: *mut c_void) -> u32;
     #[link_name = "nw_shim_connection_release_without_cancel"]

@@ -125,8 +125,7 @@ impl Drop for ProtocolDefinition {
 
 type WsClientRequestHandlerCallback =
     Mutex<Box<dyn FnMut(WsRequest) -> Option<WsResponse> + Send + 'static>>;
-type WsPongHandlerCallback =
-    Mutex<Box<dyn FnMut(Option<FrameworkError>) + Send + Sync + 'static>>;
+type WsPongHandlerCallback = Mutex<Box<dyn FnMut(Option<FrameworkError>) + Send + Sync + 'static>>;
 
 pub struct ProtocolOptions {
     handle: *mut c_void,
@@ -139,7 +138,10 @@ impl std::fmt::Debug for ProtocolOptions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ProtocolOptions")
             .field("handle", &self.handle)
-            .field("has_ws_client_request_callback", &self.ws_client_request_callback.is_some())
+            .field(
+                "has_ws_client_request_callback",
+                &self.ws_client_request_callback.is_some(),
+            )
             .finish_non_exhaustive()
     }
 }
@@ -557,6 +559,18 @@ impl ProtocolMetadata {
         let handle = unsafe { ffi::nw_shim_tls_copy_sec_protocol_metadata(self.handle) };
         (!handle.is_null()).then_some(unsafe { SecurityProtocolMetadata::from_raw(handle) })
     }
+
+    #[must_use]
+    pub fn quic_security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        let handle = unsafe { ffi::nw_shim_quic_copy_sec_protocol_metadata(self.handle) };
+        (!handle.is_null()).then_some(unsafe { SecurityProtocolMetadata::from_raw(handle) })
+    }
+
+    #[must_use]
+    pub fn security_metadata(&self) -> Option<SecurityProtocolMetadata> {
+        self.tls_security_metadata()
+            .or_else(|| self.quic_security_metadata())
+    }
 }
 
 impl Clone for ProtocolMetadata {
@@ -914,7 +928,11 @@ mod tests {
                 ping_context.as_ptr(),
             )
         };
-        assert_eq!(status, ffi::NW_OK, "failed to send ping metadata over WebSocket");
+        assert_eq!(
+            status,
+            ffi::NW_OK,
+            "failed to send ping metadata over WebSocket"
+        );
 
         let callback_error = rx
             .recv_timeout(Duration::from_secs(5))

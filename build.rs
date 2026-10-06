@@ -38,6 +38,7 @@ fn main() {
 
     println!("cargo:rustc-link-lib=framework=Network");
     println!("cargo:rustc-link-lib=framework=Foundation");
+    println!("cargo:rustc-link-lib=framework=Security");
     if target_os == "macos" {
         println!("cargo:rustc-link-lib=framework=System");
     }
